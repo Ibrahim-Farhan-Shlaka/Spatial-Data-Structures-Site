@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KD-Tree</title>
+    <link rel="stylesheet" href="..\style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="dot"></div> 
+
+    <nav class="navbar">
+        <div class="navdiv">
+            <ul>
+                <li><a href="..\KDTree\kdtree.html">KD-Tree</a></li>
+                <li><a href="..\RTree\rtree.html">R-Tree</a></li>
+                <li><a href="..\QuadTree\quadtree.html">QuadTree</a></li>
+                <li><a href="..\GridFile\gridfile.html">Grid File</a></li>
+                <li><a href="..\Voronoi\voronoi.html">Voronoi Diagram</a></li>
+                <li><a href="..\Space\space.html">Space Filling Curves</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    
+  <h1 align="center">KD-Tree</h1>
+
+    <div class="info-container">
+  <!-- General Explanation Box -->
+  <div class="infoText">
+    <h3 align="center">What is a KD-Tree?</h3>
+    <div class="typewriter">      A KD-Tree (short for k-dimensional tree) is a smart way to organize points in 2D, 3D, or higher dimensions so we can quickly find nearby points.
+Think of it like a binary search tree—but instead of sorting just numbers, it sorts coordinates like (x, y) or (x, y, z). Each level of the tree decides whether to split based on x, y, or z, cycling through these dimensions as it goes deeper.
+
+-Example:
+1.At level 0, it compares x values to split left and right.
+2.At level 1, it compares y values
+3.At level 2 (if in 3D), it compares z, and so on.
+4.This way, the KD-Tree divides space into rectangles (or boxes), helping us narrow down which area to search for nearby points.
+
+-Where It’s Used
+1.Finding closest neighbors in maps or games (e.g., "what's the nearest enemy?")
+2.Robotics (e.g., nearest obstacle)
+3.Machine learning (e.g., KNN classifiers)
+4.3D simulations and computer graphics
+
+-Strengths
+1.Very fast for nearest neighbor and range queries
+2.Great for organizing spatial data in 2D/3D
+3.Easy to visualize and understand
+
+-Weaknesses
+1.Slows down with very high dimensions (like 10D+)
+2.Needs rebalancing after many insertions/deletions
+3.Performance drops with uneven or clustered data
+    </div>
+  </div>
+
+  <!-- Algorithm Steps Box -->
+  <div class="infoText">
+  <h3 align="center">KD-Tree Operations</h3>
+  <div class="algorithm-steps">
+    <div class="step-group">
+      <h4 align="center">Construction:</h4>
+      <ol>
+        <li><strong>Initialize:</strong> Start with all points in root node</li>
+        <li><strong>Recursive Split:</strong>
+          <ul>
+            <li>Even depths: Split space vertically (x-coordinate)</li>
+            <li>Odd depths: Split horizontally (y-coordinate)</li>
+            <li>Choose median point for balanced splits</li>
+          </ul>
+        </li>
+        <li><strong>Terminate:</strong> When nodes contain ≤ threshold points</li>
+      </ol>
+    </div>
+
+    <div class="step-group">
+      <h4 align="center">Insertion:</h4>
+      <ol>
+        <li>Traverse tree comparing point at each level’s split axis</li>
+        <li>Recurse left/right depending on coordinate</li>
+        <li>Insert at empty leaf with updated bounding region</li>
+      </ol>
+    </div>
+
+    <div class="step-group">
+      <h4 align="center">Deletion:</h4>
+      <ol>
+        <li>Find node matching the point and its split axis</li>
+        <li>If leaf, remove directly; else find replacement (e.g. min node in subtree)</li>
+        <li>Rebuild subtree rooted at deleted node</li>
+      </ol>
+    </div>
+
+    <div class="step-group">
+      <h4 align="center">Nearest Neighbor Search:</h4>
+      <ol>
+        <li>Traverse tree comparing target point with splitting planes</li>
+        <li>Maintain priority queue of candidates</li>
+        <li>Prune subtrees when bounding box is too far</li>
+        <li>Backtrack to verify no closer points exist</li>
+      </ol>
+    </div>
+
+    <div class="step-group">
+      <h4 align="center">Range Queries:</h4>
+      <ol>
+        <li>Check if current node's region intersects query area</li>
+        <li>Recurse into both subtrees if needed</li>
+        <li>Collect points within range at leaf nodes</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Complexities Table Box -->
+  <div class="infoText">
+    <h3 align="center">Complexities</h3>
+    <div class="kd-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Operation</th>
+            <th>Average Case</th>
+            <th>Worst Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Construction</td><td>O(n log n)</td><td>O(n log n)</td></tr>
+          <tr><td>Insertion</td><td>O(log n)</td><td>O(n)</td></tr>
+          <tr><td>Deletion</td><td>O(log n)</td><td>O(n)</td></tr>
+          <tr><td>Range Query</td><td>O(√n + k)</td><td>O(n)</td></tr>
+          <tr><td>Nearest Neighbor</td><td>O(log n)</td><td>O(n)</td></tr>
+          <tr><td>k-NN Query</td><td>O(k log n)</td><td>O(kn)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+    <div class="button-list">
+        <button class="interact-button" id="reset">Empty Grid</button>
+          <div class="hide">Deletes all points in the tree.</div>
+        <button class="interact-button" id="random-points">Random Points</button>
+          <div class="hide">Generates a new tree with 10 random points.</div>
+        <button class="interact-button" id="add-multiple">Add 20 Points</button>
+          <div class="hide">Adds 20 randomly generated points to the current tree.</div>
+        <button class="interact-button" id="query-btn">Query</button>
+          <div class="hide">After clicking this, you can pick any spot in the canvas as a query point, and its nearest 5 neighbors will be highlighted from it.</div>
+    </div>
+
+      <div class="visual-box" id="kdtree_visual"></div>
+      <div class="visual-box" id="tree-canvas"></div>
+    
+    <script src="kdtree.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.js"></script>
+    <script src="../index.js"></script>
+    
+</body>
+
+</html>

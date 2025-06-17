@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voronoi Diagrams</title>
+    <link rel="stylesheet" href="../style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dot"></div>
+
+    <nav class="navbar">
+        <div class="navdiv">
+            <ul>
+                <li><a href="..\KDTree\kdtree.html">KD-Tree</a></li>
+                <li><a href="..\RTree\rtree.html">R-Tree</a></li>
+                <li><a href="..\QuadTree\quadtree.html">QuadTree</a></li>
+                <li><a href="..\GridFile\gridfile.html">Grid File</a></li>
+                <li><a href="..\Voronoi\voronoi.html">Voronoi Diagram</a></li>
+                <li><a href="..\Space\space.html">Space Filling Curves</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <h1 align="center"> Voronoi Diagrams: </h1>
+
+    <div class="info-container">
+  <!-- General Explanation Box -->
+  <div class="infoText">
+    <h3 align="center">What is a voronoi diagram?</h3>
+    <div class="typewriter">A Voronoi Diagram splits space based on closeness to points. Imagine you drop some seeds on paper: every spot on the paper belongs to the closest seed. The diagram draws lines (or "walls") to separate these zones—each one is called a cell. Each point owns a region where every location is closer to it than to any other point.
+
+Where It’s Used
+Geography (e.g. “closest hospital” maps)
+Robotics (for navigation and sensor fields)
+Cellular networks (signal coverage zones)
+Game development (for territory division or procedural generation)
+Art & design (generating organic-looking patterns)
+
+Strengths
+Gives a natural partitioning of space
+Works well for proximity queries (e.g. nearest neighbor)
+Visually intuitive and helpful for interactive tools
+Fast to compute with small to medium point sets
+
+Weaknesses
+Recomputing can be slow if points are moving frequently
+Not ideal for very large dynamic datasets
+Harder to extend directly into high-dimensional space
+    </div>
+  </div>
+
+  <!-- Algorithm Steps Box -->
+  <div class="infoText">
+  <h3 align="center">Voronoi Diagram Operations</h3>
+
+  <div class="algorithm-steps">
+    <div class="step-group">
+      <h4>Construction:</h4>
+      <ol>
+        <li>Collect all input sites (points or objects)</li>
+        <li>Use Fortune’s algorithm or incremental insertion to build regions</li>
+      </ol>
+    </div>
+
+    <div class="step-group">
+      <h4>Insertion:</h4>
+      <ol>
+        <li>Add new site to point set</li>
+        <li>Update affected regions and bisectors</li>
+        <li>Recompute portions of the diagram locally</li>
+      </ol>
+    </div>
+
+    <div class="step-group">
+      <h4>Search:</h4>
+      <ol>
+        <li><strong>Nearest Neighbor:</strong> Locate region containing query point</li>
+        <li><strong>Range Query:</strong> Check all regions overlapping the range</li>
+      </ol>
+    </div>
+
+    <div class="step-group">
+      <h4>Deletion:</h4>
+      <ol>
+        <li>Remove site and invalidate affected regions</li>
+        <li>Recompute or locally repair diagram</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+  <!-- Complexities Table Box -->
+  <div class="infoText">
+    <h3 align="center">Complexities</h3>
+    <div class="kd-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Operation</th>
+            <th>Average Case</th>
+            <th>Worst Case</th>
+          </tr>
+        </thead>
+        <tbody>
+  <tr><td>Construction</td><td>O(n log n)</td><td>O(n log n)</td></tr>
+  <tr><td>Insertion</td><td>O(n)</td><td>O(n)</td></tr>
+  <tr><td>Deletion</td><td>O(n)</td><td>O(n)</td></tr>
+  <tr><td>Range Query</td><td>O(log n + k)</td><td>O(n)</td></tr>
+  <tr><td>Nearest Neighbor</td><td>O(log n)</td><td>O(n)</td></tr>
+  <tr><td>k-NN Query</td><td>O(k log n)</td><td>O(kn)</td></tr>
+</tbody>
+
+      </table>
+    </div>
+  </div>
+</div>
+
+    <div class="button-list" style="margin-left: 14%; margin-top: 13.5%;">
+        <button class="interact-button" id="reset">Empty Grid</button>
+          <div class="hide">Deletes all points in the tree.</div>
+        <button class="interact-button" id="random-points">Random Points</button>
+          <div class="hide">Generates a new tree with random points.</div>
+         <button class="interact-button" id="add-multiple">Add 100 Points</button>
+          <div class="hide">Adds 100 randomly generated points to the current tree.</div>
+        <button class="interact-button" id="query-btn">Query</button>
+          <div class="hide">After clicking this, you can pick any spot in the canvas as a query point, and its nearest 5 neighbors will be highlighted from it.</div>  
+    </div>
+
+    <script type="module">
+        import Delaunator from 'https://cdn.skypack.dev/delaunator@5.0.0';
+    </script>
+
+    <div class="visual-box" id="voronoi_visual" style="height: 825px; width: 825px; margin-bottom: 0.5%;"></div>
+
+    <script src="vor-sketch.js" type="module"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.js"></script>
+    <script src="../index.js"></script>
+    
+</body>
+
+</html>

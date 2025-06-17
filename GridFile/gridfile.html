@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid File</title>
+    <link rel="stylesheet" href="..\style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dot"></div>
+
+    <nav class="navbar">
+        <div class="navdiv">
+            <ul>
+                <li><a href="..\KDTree\kdtree.html">KD-Tree</a></li>
+                <li><a href="..\RTree\rtree.html">R-Tree</a></li>
+                <li><a href="..\QuadTree\quadtree.html">QuadTree</a></li>
+                <li><a href="..\GridFile\gridfile.html">Grid File</a></li>
+                <li><a href="..\Voronoi\voronoi.html">Voronoi Diagram</a></li>
+                <li><a href="..\Space\space.html">Space Filling Curves</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <h1 align="center">Grid File:</h1>
+
+    <div class="info-container">
+  <!-- General Explanation Box -->
+  <div class="infoText">
+    <h3 align="center">What is a Grid File?</h3>
+    <div class="typewriter"> A Grid File is a spatial indexing method that divides a space (like a 2D plane) into a grid of rectangular cells, each pointing to a "bucket" that stores the data points located in that cell.
+Imagine overlaying a grid on a map: each square in the grid stores whatever falls into that area. It's especially useful when data is coming in continuously or in bulk and needs to be efficiently stored and searched.
+
+-Where It’s Used
+Databases for spatial indexing (especially in 2D)
+Map-based applications for range lookups (e.g., "show all buildings in this area")
+Scientific simulations or image processing where space is uniformly divided
+
+-Strengths
+Fast range queries: easy to find everything in a specific region by checking only the relevant cells.
+Simple structure: easy to implement and understand.
+Can be dynamically expanded as more data is added.
+Efficient for data that’s evenly distributed in space.
+
+-Weaknesses
+Not ideal for very clustered or unevenly distributed data (some cells may have many points, others none).
+Cell splitting logic (to avoid overflowing buckets) can become complex.
+Can use more space compared to tree-based structures when dealing with sparse data.
+
+-Example Use
+If a map is split into a 10x10 grid:
+A point at (23, 65) goes into the appropriate cell.
+To search for all points in a rectangular region, only the intersecting cells are scanned—no need to search the whole dataset.
+    </div>
+  </div>
+
+  <!-- Algorithm Steps Box -->
+  <div class="infoText">
+  <h3 align="center">Grid File Operations</h3>
+
+  <div class="algorithm-steps">
+    <div class="step-group">
+      <h4>Construction:</h4>
+      <ol>
+        <li>Initialize grid directory and linear scales for each dimension</li>
+        <li>Start with single cell pointing to one data bucket</li>
+      </ol>
+    </div>
+
+    <div class="step-group">
+      <h4>Insertion:</h4>
+      <ol>
+        <li><strong>Locate Cell:</strong> Use linear scales to find correct grid cell</li>
+        <li><strong>Add Entry:</strong> Insert into the target bucket</li>
+        <li><strong>Split If Full:</strong> If bucket overflows:
+          <ul>
+            <li>Split linear scale in the needed dimension</li>
+            <li>Update grid directory and redistribute entries</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+
+    <div class="step-group">
+      <h4>Search:</h4>
+      <ol>
+        <li><strong>Range Query:</strong> Identify overlapping grid cells</li>
+        <li><strong>Exact Match:</strong> Use scales to directly locate cell and bucket</li>
+      </ol>
+    </div>
+
+    <div class="step-group">
+      <h4>Deletion:</h4>
+      <ol>
+        <li>Remove entry from appropriate bucket</li>
+        <li>Merge or adjust scales if underflows occur (optional, rarely implemented)</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Complexities Table Box -->
+  <div class="infoText">
+    <h3 align="center">Complexities</h3>
+    <div class="kd-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Operation</th>
+            <th>Average Case</th>
+            <th>Worst Case</th>
+          </tr>
+        </thead>
+        <tbody>
+  <tr><td>Construction</td><td>O(n)</td><td>O(n²)</td></tr>
+  <tr><td>Insertion</td><td>O(1)</td><td>O(n)</td></tr>
+  <tr><td>Deletion</td><td>O(1)</td><td>O(n)</td></tr>
+  <tr><td>Range Query</td><td>O(k)</td><td>O(n)</td></tr>
+  <tr><td>Nearest Neighbor</td><td>O(k)</td><td>O(n)</td></tr>
+  <tr><td>k-NN Query</td><td>O(k)</td><td>O(kn)</td></tr>
+</tbody>
+
+      </table>
+    </div>
+  </div>
+</div>
+
+    <div class="button-list">
+        <button class="interact-button" id="reset">Empty Grid</button>
+          <div class="hide">Deletes all points in the tree.</div>
+        <button class="interact-button" id="random-points">Random Points</button>
+          <div class="hide">Generates a new tree with 10 random points.</div>
+        <button class="interact-button" id="add-multiple">Add 20 Points</button>
+          <div class="hide">Adds 20 randomly generated points to the current tree.</div>
+        <button class="interact-button" id="query-btn">Query</button>
+          <div class="hide">After clicking this, you can pick any spot in the canvas as a query point, and its nearest 5 neighbors will be highlighted from it.</div>
+    </div>
+
+    <div class="visual-box" id="gridfile_visual">
+        <div class="controls">
+            <input type="range" id="cellSize" min="20" max="100" value="50">
+        <canvas id="gridCanvas" width="750" height="730"></canvas>
+        </div>
+    </div>
+    <div class="visual-box" id="queryResult"></div>
+
+    <script src="gridfile.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.js"></script>
+    <script src="..\index.js"></script>
+    
+</body>
+
+</html>
