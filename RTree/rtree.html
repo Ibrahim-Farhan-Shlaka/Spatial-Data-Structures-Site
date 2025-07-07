@@ -18,6 +18,7 @@
     <nav class="navbar">
         <div class="navdiv">
             <ul>
+                <li><a href="..\Home.html"> <img src="../assets/home.png" style="width: 18px;"> Home </a></li>
                 <li><a href="..\KDTree\kdtree.html">KD-Tree</a></li>
                 <li><a href="..\RTree\rtree.html">R-Tree</a></li>
                 <li><a href="..\QuadTree\quadtree.html">QuadTree</a></li>
@@ -112,19 +113,39 @@ Can be less efficient than KD-Trees for exact nearest-neighbor searches
           <tr><th>Operation</th><th>Average</th><th>Worst</th></tr>
         </thead>
         <tbody>
-          <tr><td>Construction</td><td>O(n log n)</td><td>O(n²)</td></tr>
+          <tr><td>Bulk Loading</td><td>O(n log n)</td><td>O(n²)</td></tr>
           <tr><td>Insertion</td><td>O(log n)</td><td>O(n)</td></tr>
           <tr><td>Deletion</td><td>O(log n)</td><td>O(n)</td></tr>
-          <tr><td>Range Query</td><td>O(√n + k)</td><td>O(n)</td></tr>
+          <tr><td>Range Query</td><td>O(logn + m)</td><td>O(n)</td></tr>
           <tr><td>Nearest Neighbor</td><td>O(log n)</td><td>O(n)</td></tr>
           <tr><td>k-NN Query</td><td>O(k log n)</td><td>O(kn)</td></tr>
         </tbody>
       </table>
     </div>
+    <!-- R-Tree Explanation -->
+<div class="kd-explanation">
+  <p><h4 align="center" style="color: red;">Bulk Loading:</h4> R-Trees can be built efficiently using bulk-loading algorithms like Sort-Tile-Recursive (STR), which sort and group spatial objects to minimize overlap. This process reduces tree height and clustering issues, and typically takes O(n log n) time due to sorting and hierarchical insertion.</p>
+
+  <p><h4 align="center" style="color: red;">Insertion/Deletion:</h4> Standard insertions and deletions both traverse from the root to a leaf, making decisions at each level. These operations take O(log n) on average since the tree remains balanced and shallow due to grouping of multiple entries per node.</p>
+
+  <p><h4 align="center" style="color: red;">k-NN Search:</h4> To find the k closest points, R-Trees use a priority queue to explore nodes ordered by distance. This allows pruning of far regions early, leading to O(k log n) on average. As with NN, poor clustering or overlapping rectangles can worsen performance.</p>
+
+  <p><h4 align="center" style="color: red;">Range Query:</h4> Range queries recursively check which bounding rectangles intersect the query window. The tree’s height is log n, and only overlapping branches are explored. With m results returned, complexity is O(log n + m) in most cases.</p>
+</div>
+
   </div>
 </div>
 
-    <div class="button-list">
+    <div id="bar">
+      <span id="cellValue" style="color: red; font-size: 25px; margin-left: 37.5%;">Node Capacity [Minimum = 2] = </span>
+      <input type="number" id="cellSize" name="quantity" min="1" max="5">
+    </div>
+
+    <div class="button-list" style="margin-top: 5%;">
+      <button class="interact-button">Left click to add</button>
+      <button class="interact-button">Right click to Delete</button>
+      <button class="interact-button">Click & Drag to perform a range query</button>
+      <button class="interact-button"></button>
         <button class="interact-button" id="reset">Empty Grid</button>
           <div class="hide">Deletes all points in the tree.</div>
         <button class="interact-button" id="random-points">Random Points</button>

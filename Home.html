@@ -29,16 +29,19 @@
     </nav>
     
     <h1 align="center">Spatial Data Structures:</h1>
-    <div class="infoText" id="explanationText">
+    <div id="explanationText">
         <div class="typewriter">
-            Spatial data structures organize information based on physical position, making them essential for location-based queries. Unlike regular databases that search by value (like finding all "red cars"), these structures answer questions about position and proximity:
-    
-            "What's the nearest hospital?"
-            "Which points fall within this area?"
-            "Find all coffee shops within 1km"
-    
-            Each structure solves these problems differently, with unique trade-offs between search speed, memory usage, and ease of updates. Below are six fundamental approaches used in mapping apps, games, and navigation systems.
-        </div> 
+            Spatial data structures are specialized ways of organizing information based on where things are located in space. They are essential for answering questions that involve position, distance, or area—things that traditional databases aren't built to handle efficiently. Instead of just looking for items based on values (like “find all red cars”), spatial structures let us ask more complex, location-based questions such as:
+
+"What is the closest hospital to my location?"
+
+"Which buildings fall within this neighborhood?"
+
+"Show all coffee shops within 1 km of here."
+
+To answer these kinds of queries efficiently, spatial structures group and index data based on coordinates, regions, or proximity. Each method—like grids, quadtrees, or KD-Trees—has its own strengths and weaknesses. Some are faster at searching, others use less memory, and some are easier to update dynamically.
+
+These structures are widely used in real-world systems like GPS navigation, video games, robotics, mapping tools, and spatial databases. Below are six foundational spatial structures that help power those applications.</div> 
     </div>
     
     <h2 align="center">Some Structures:</h2>
@@ -48,84 +51,48 @@
         <div class="algorithm-box">
             <h3>KD-Tree</h3>
             <p>Binary space partitioning for multidimensional data. Enables efficient range queries through hierarchical decomposition.</p>
-            <div class="complexity">
-                <strong>Complexity:</strong><br>
-                • Query: O(log n)<br>
-                • Insert: O(log n)<br>
-                • Delete: O(log n)
-            </div>
-            <img src="assets/KDtree.png" style="width:50%;">
-            <a href="KDTree/kdtree.html">Details →</a>
+            <img src="assets/KDtree.png" style="width:100%;">
+            <a href="KDTree/kdtree.html" style="font-size: larger;">Details →</a>
         </div>
     
         <!-- QuadTree -->
         <div class="algorithm-box">
             <h3>QuadTree</h3>
             <p>Recursively divides 2D space into four quadrants. Ideal for spatial indexing in geographic systems.</p>
-            <div class="complexity">
-                <strong>Complexity:</strong><br>
-                • Query: O(k*log n)<br>
-                • Insert: O(log n)<br>
-                • Delete: O(log n)
-            </div>
-            <img src="assets/PRexamp.png" style="width:50%;">
-            <a href="QuadTree/quadtree.html">Details →</a>
+            <img src="assets/PRexamp.png" style="width:100%;">
+            <a href="QuadTree/quadtree.html" style="font-size: larger;">Details →</a>
         </div>
     
         <!-- R-Tree -->
         <div class="algorithm-box">
             <h3>R-Tree</h3>
             <p>Disk-based indexing using Minimum Bounding Rectangles (MBRs). Optimized for spatial queries on large datasets.</p>
-            <div class="complexity">
-                <strong>Complexity:</strong><br>
-                • Query: O(log n)<br>
-                • Insert: O(log n)<br>
-                • Delete: O(log n)
-            </div>
-            <img src="assets/PRexamp.png" style="width:50%;">
-            <a href="RTree/rtree.html">Details →</a>
+            <img src="assets/rtree.jpg" style="width:100%;">
+            <a href="RTree/rtree.html" style="font-size: larger;" >Details →</a>
         </div>
     
         <!-- Grid File -->
         <div class="algorithm-box">
             <h3>Grid File</h3>
             <p>Partitions space into uniform cells with pointers to data buckets. Provides O(1) access for uniform distributions.</p>
-            <div class="complexity">
-                <strong>Complexity:</strong><br>
-                • Query: O(1)-O(n)<br>
-                • Insert: O(1)<br>
-                • Delete: O(1)
-            </div>
-            <img src="assets/Grid-file-for-point-distribution.png" style="width:50%;">
-            <a href="GridFile/gridfile.html">Details →</a>
+            <img src="assets/Grid-file-for-point-distribution.png" style="width:100%;">
+            <a href="GridFile/gridfile.html" style="font-size: larger;">Details →</a>
         </div>
     
         <!-- Space Filling Curves -->
         <div class="algorithm-box">
             <h3>Space Filling Curves</h3>
             <p>Hilbert/Z-order curves that map multidimensional data to 1D while preserving spatial locality.</p>
-            <div class="complexity">
-                <strong>Complexity:</strong><br>
-                • Query: O(log n)<br>
-                • Insert: O(log n)<br>
-                • Delete: O(log n)
-            </div>
-            <img src="assets/Four-level_Z.svg" style="width:50%;">
-            <a href="Space/space.html">Details →</a>
+            <img src="assets/Four-level_Z.svg" style="width:100%;">
+            <a href="Space/space.html" style="font-size: larger;">Details →</a>
         </div>
     
         <!-- Voronoi Diagrams -->
         <div class="algorithm-box">
             <h3>Voronoi Diagrams</h3>
             <p>Geometric partitioning of space into regions based on distance to generator points. Essential for proximity analysis.</p>
-            <div class="complexity">
-                <strong>Complexity:</strong><br>
-                • Query: O(log n)<br>
-                • Insert: O(log n)<br>
-                • Delete: O(log n)
-            </div>
-            <img src="assets/Euclidean_Voronoi_diagram.svg.png" style="width:50%;">
-            <a href="Voronoi/voronoi.html">Details →</a>
+            <img src="assets/Euclidean_Voronoi_diagram.svg.png" style="width:100%;">
+            <a href="Voronoi/voronoi.html" style="font-size: larger;">Details →</a>
         </div>
     </div>
 

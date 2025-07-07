@@ -1,4 +1,6 @@
-//canvas setup
+let CAPACITY = 4;
+
+//for canvas
 const container = document.getElementById('rtree_visual');
 const canvas = document.createElement('canvas');
 canvas.width = 750;
@@ -7,17 +9,16 @@ canvas.style.border = '1px solid #ccc';
 container.appendChild(canvas);
 const ctx = canvas.getContext('2d');
 
-let queryMode = false;
-const k = 5; // change as needed
-document.getElementById("query-btn").addEventListener("click", () => {
-    queryMode = true;
-});
+let isDragging = false;
+let dragStart = null;
+let dragEnd = null;
+let highlightedRects = [];
 
 //create rectangles similar to points inide other trees, each rectangle has a different size and shape and position
 //w = width, h = height, x = x coordinate, y = y coordinate
 function createRect() {
-    const w = 20 + Math.random() * 40;
-    const h = 20 + Math.random() * 40;
+    const w = 20 + Math.random() * 30;
+    const h = 20 + Math.random() * 30;
     const x = Math.random() * (canvas.width - w);
     const y = Math.random() * (canvas.height - h);
     return { x, y, w, h };
@@ -52,9 +53,28 @@ class RTreeNode {
     }
 }
 
+//for binary tree
+let rectangles = Array(10).fill().map(createRect);
+let rtree = buildRTree(rectangles);
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+drawWrapper(rtree);
+const treeContainer = document.getElementById('rtree-canvas');
+const treeCanvas = document.createElement('canvas');
+treeCanvas.width = 750;
+treeCanvas.height = 750;
+treeCanvas.style.border = '1px solid #ccc';
+treeContainer.appendChild(treeCanvas);
+const treeCtx = treeCanvas.getContext('2d');
+let highlightedNodes = new Set();
+let queryMode = false;
 
-function buildRTree(rects, maxEntries = 4) {
-    // Step 1: create leaf nodes
+document.getElementById("query-btn").addEventListener("click", () => {
+    queryMode = true;
+});
+
+function buildRTree(rects, maxEntries = CAPACITY) {
+    
+    //create leaf nodes
     let nodes = [];
     for (let i = 0; i < rects.length; i += maxEntries) {
         const leaf = new RTreeNode(0);
@@ -66,7 +86,7 @@ function buildRTree(rects, maxEntries = 4) {
 
     let level = 1;
 
-    // Step 2: group nodes into higher levels until one root remains
+    //group nodes into higher levels until one root remains
     while (nodes.length > maxEntries) {
         const grouped = [];
         for (let i = 0; i < nodes.length; i += maxEntries) {
@@ -81,7 +101,7 @@ function buildRTree(rects, maxEntries = 4) {
         level++;
     }
 
-    // Final root node
+    //final root node
     const root = new RTreeNode(level);
     for (const entry of nodes) {
         root.insert(entry);
@@ -89,13 +109,13 @@ function buildRTree(rects, maxEntries = 4) {
     return root;
 }
 
-
 //draws the bounding rectangles that surround the rectangles inside the tree
-function drawRectangle(rect, color = 'white', fill = false, label = '') {
+function drawRectangle(rect, color = 'white', fill = false) {
 
     //line stroke setup
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]); // dotted lines
     ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
 
     //if fill is true it draws the rectangle
@@ -106,6 +126,7 @@ function drawRectangle(rect, color = 'white', fill = false, label = '') {
 }
 
 function drawGridAndAxes() {
+
     const opacity = 0.7;
     ctx.strokeStyle = `rgba(0, 0, 0, ${opacity})`;
     ctx.setLineDash([5, 5]); // dotted lines
@@ -151,26 +172,26 @@ function drawGridAndAxes() {
 
 //fucntion for drawing the rtree along with all its children recursively
 function drawRtree(node, depth = 0, color = 'green') {
-
     if (node.children) {
         for (const child of node.children) { //go through all children of a node
             if (child.child) {
-                drawRectangle(child, 'white', false);
+                drawRectangle(child, `rgb(255, 255, 255)`, false);
                 drawRtree(child.child, depth + 1);
             } else {
-                drawRectangle(child, 'rgba(213, 34, 73, 0.78)', true); //drawing the rectangle in red
-            }
-        }
-    }
-
+                drawRectangle(child, 'rgba(213, 34, 73, 1)', true); //drawing the rectangle in reds
+            }}}
 }
 
-function drawWrapper(node, depth = 0, color = 'green'){
+//wrapper to call draw grid and draw tree
+function drawWrapper(node, depth = 0, color = 'green') {
     drawGridAndAxes();
     drawRtree(node, depth, color);
+    drawHighlightedRects();
 }
 
+//function for knn search, wrong, fix later
 function knnRTreeSearch(node, queryPoint, k, nearest = []) {
+
     // Distance from point to center of a rectangle
     function rectDistance(rect) {
         const cx = rect.x + rect.w / 2;
@@ -206,35 +227,88 @@ function knnRTreeSearch(node, queryPoint, k, nearest = []) {
     return nearest;
 }
 
-//listener for reset button
-document.getElementById('reset').addEventListener('click', () => {
-    rectangles = [];
-    rtree = buildRTree(rectangles);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawRtree(rtree);
-});
+function deleteRectangle(rectToDelete) {
+    // Find index of rectangle with matching properties (x, y, w, h)
+    const index = rectangles.findIndex(r =>
+        r.x === rectToDelete.x &&
+        r.y === rectToDelete.y &&
+        r.w === rectToDelete.w &&
+        r.h === rectToDelete.h
+    );
 
-//listener for random points button, rebuilds tree with new random points
-document.getElementById('random-points').addEventListener('click', () => {
-    rectangles = Array(25).fill().map(createRect);
-    rtree = buildRTree(rectangles);
+    if (index !== -1) {
+        rectangles.splice(index, 1);  // Remove from array
+        rtree = buildRTree(rectangles);  // Rebuild R-tree
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawWrapper(rtree);
+        drawTreeStructure(rtree);
+    } else {
+        console.log('Rectangle not found for deletion');
+    }
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function drawHighlightedRects() {
+    highlightedRects.forEach(rect => {
+        drawRectangle(rect, 'green', true);
+    });
+}
+
+async function highlightIntersectionTraversal(node, queryRect) {
+    if (!node) return;
+
+    // Clear previous highlights
+    highlightedNodes.clear();
+
+    // Highlight current node MBR on canvas and mark node as highlighted on tree visualization
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawWrapper(rtree);
-});
+    drawRectangle(node.mbr || node, 'yellow', false);
+    drawHighlightedRects();
 
-//intialisation
-let rectangles = Array(25).fill().map(createRect);
-let rtree = buildRTree(rectangles);
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-drawWrapper(rtree);
+    highlightedNodes.add(node); // mark current internal node as highlighted
 
-const treeContainer = document.getElementById('rtree-canvas');
-const treeCanvas = document.createElement('canvas');
-treeCanvas.width = 750;
-treeCanvas.height = 750;
-treeCanvas.style.border = '1px solid #ccc';
-treeContainer.appendChild(treeCanvas);
-const treeCtx = treeCanvas.getContext('2d');
+    await delay(750);
+
+    if (node.leaf) {
+        for (const rect of node.children) {
+            if (rectanglesIntersect(rect, queryRect)) {
+                highlightedRects.push(rect); // for canvas highlighting
+                highlightedNodes.add(rect); // highlight leaf rectangle on tree visualization
+            }
+        }
+    } else {
+        for (const childEntry of node.children) {
+            const childMBR = childEntry;
+            const childNode = childEntry.child;
+
+            if (rectanglesIntersect(childMBR, queryRect)) {
+                await highlightIntersectionTraversal(childNode, queryRect);
+                highlightedNodes.add(childNode);
+            }
+        }
+    }
+
+    // After traversal, redraw everything and highlights on both canvases
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawWrapper(rtree);
+    drawHighlightedRects();
+
+    drawTreeStructure(rtree); // redraw tree with highlights
+}
+
+//Utility function to check intersection of two rectangles
+function rectanglesIntersect(r1, r2) {
+    return !(
+        r2.x > r1.x + r1.w ||
+        r2.x + r2.w < r1.x ||
+        r2.y > r1.y + r1.h ||
+        r2.y + r2.h < r1.y
+    );
+}
 
 function drawTreeStructure(node) {
     treeCtx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
@@ -287,11 +361,22 @@ function drawTreeStructure(node) {
         }
     }
 
-    // Draw nodes
+    // Helper function: check if node's MBR intersects any highlighted rect
+    function nodeContainsHighlighted(node) {
+        if (!node.mbr) return false;
+        return highlightedRects.some(hr => rectanglesIntersect(node.mbr, hr));
+    }
+
+    // Draw nodes with highlight if any of its children rectangles are highlighted
     for (const [n, pos] of positions.entries()) {
         treeCtx.beginPath();
         treeCtx.arc(pos.x, pos.y, nodeRadius, 0, 2 * Math.PI);
-        treeCtx.fillStyle = n.leaf ? '#d52249' : '#4682b4';
+
+        if (highlightedRects.length > 0 && nodeContainsHighlighted(n)) {
+            treeCtx.fillStyle = '#4CAF50'; // green highlight for nodes with highlighted rectangles
+        } else {
+            treeCtx.fillStyle = n.leaf ? '#d52249' : '#4682b4';
+        }
         treeCtx.fill();
         treeCtx.strokeStyle = 'black';
         treeCtx.stroke();
@@ -303,10 +388,19 @@ function drawTreeStructure(node) {
         treeCtx.fillText(n.children.length, pos.x, pos.y + 3);
     }
 }
-
 drawTreeStructure(rtree);
 
-// Optional: Hook it into your random and reset button logic
+//listener that changes the capacity of an mbr
+document.getElementById('cellSize').addEventListener('input', (e) => {
+  if(  parseInt(e.target.value) < 2) return;
+  CAPACITY = parseInt(e.target.value);
+  rtree = buildRTree(rectangles);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawWrapper(rtree);
+  drawTreeStructure(rtree);
+});
+
+//listener to generate new tree
 document.getElementById('random-points').addEventListener('click', () => {
     rectangles = Array(25).fill().map(createRect);
     rtree = buildRTree(rectangles);
@@ -315,6 +409,7 @@ document.getElementById('random-points').addEventListener('click', () => {
     drawTreeStructure(rtree);
 });
 
+//listener to reset and clean tree
 document.getElementById('reset').addEventListener('click', () => {
     rectangles = [];
     rtree = buildRTree(rectangles);
@@ -323,37 +418,41 @@ document.getElementById('reset').addEventListener('click', () => {
     drawTreeStructure(rtree);
 });
 
-canvas.addEventListener('click', (event) => {
+//listener to batch add points
+document.getElementById('add-multiple').addEventListener('click', () => {
+    const temp = Array(25).fill().map(createRect);
+    rectangles.push(...temp); // Add to existing array
+    rtree = buildRTree(rectangles);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawWrapper(rtree);
+    drawTreeStructure(rtree);
+});
+
+//for running query
+canvas.addEventListener('click', async (event) => {
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    if (queryMode) {
-        const queryPoint = { x, y };
-        const neighbors = knnRTreeSearch(rtree, queryPoint, k);
+    if (queryMode) { //runs the query
+        //Find rectangle clicked
+        let clickedRect = null;
+        for (const r of rectangles) {
+            if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+                clickedRect = r;
+                break;
+            }
+        }
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawWrapper(rtree);
-
-        ctx.fillStyle = 'cyan';
-        ctx.beginPath();
-        ctx.arc(queryPoint.x, queryPoint.y, 6, 0, Math.PI * 2);
-        ctx.fill();
-
-        neighbors.forEach(({ rect }) => {
-            drawRectangle(rect, 'yellow', true);
-            ctx.setLineDash([4, 4]);
-            ctx.beginPath();
-            ctx.moveTo(queryPoint.x, queryPoint.y);
-            ctx.lineTo(rect.x + rect.w / 2, rect.y + rect.h / 2);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        });
+        if (clickedRect) {
+            //Run the traversal highlight
+            await highlightIntersectionTraversal(rtree, clickedRect);
+        }
 
         queryMode = false;
-    } else {
-        const w = 20 + Math.random() * 40;
-        const h = 20 + Math.random() * 40;
+    } else { //adds a normal reectangle
+        const w = 20 + Math.random() * 30;
+        const h = 20 + Math.random() * 30;
         const newRect = {
             x: Math.min(x, canvas.width - w),
             y: Math.min(y, canvas.height - h),
@@ -368,11 +467,89 @@ canvas.addEventListener('click', (event) => {
     }
 });
 
-document.getElementById('add-multiple').addEventListener('click', () => {
-    const temp = Array(25).fill().map(createRect);
-    rectangles.push(...temp); // Add to existing array
-    rtree = buildRTree(rectangles);
+canvas.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // Find the rectangle under the cursor
+    const threshold = 10;
+    let rectToDelete = null;
+
+    for (const r of rectangles) {
+        if (
+            x >= r.x - threshold &&
+            x <= r.x + r.w + threshold &&
+            y >= r.y - threshold &&
+            y <= r.y + r.h + threshold
+        ) {
+            rectToDelete = r;
+            break;
+        }
+    }
+
+    if (rectToDelete) {
+        deleteRectangle(rectToDelete);
+    }
+});
+
+canvas.addEventListener("mousedown", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    dragStart = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+    };
+    isDragging = true;
+});
+
+canvas.addEventListener("mousemove", (event) => {
+    if (!isDragging) return;
+
+    const rect = canvas.getBoundingClientRect();
+    dragEnd = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+    };
+
+    // Redraw while dragging
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawWrapper(rtree);
+
+    // Draw red query box
+    if (dragStart && dragEnd) {
+        const x = Math.min(dragStart.x, dragEnd.x);
+        const y = Math.min(dragStart.y, dragEnd.y);
+        const w = Math.abs(dragStart.x - dragEnd.x);
+        const h = Math.abs(dragStart.y - dragEnd.y);
+
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, w, h);
+    }
+});
+
+canvas.addEventListener("mouseup", async (event) => {
+    if (!isDragging) return;
+    isDragging = false;
+
+    if (!dragStart || !dragEnd) return;
+
+    const x = Math.min(dragStart.x, dragEnd.x);
+    const y = Math.min(dragStart.y, dragEnd.y);
+    const w = Math.abs(dragStart.x - dragEnd.x);
+    const h = Math.abs(dragStart.y - dragEnd.y);
+    const queryBox = { x, y, w, h };
+
+    highlightedRects = []; // Clear previous highlights for new query
+
+    await highlightIntersectionTraversal(rtree, queryBox);
+
+    // Also redraw tree structure to reflect updated highlights
     drawTreeStructure(rtree);
+
+    // Reset drag state
+    dragStart = null;
+    dragEnd = null;
 });

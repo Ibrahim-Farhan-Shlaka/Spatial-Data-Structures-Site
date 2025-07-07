@@ -1,6 +1,5 @@
 const container = document.getElementById('space_visual');
 const tooltip = document.getElementById('tooltip');
-
 const canvas = document.createElement('canvas');
 canvas.width = 750;
 canvas.height = 750;
@@ -93,7 +92,7 @@ function drawCurve() {
   }
 }
 
-// mouse move
+//mouse move
 canvas.addEventListener('mousemove', (e) => {
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
@@ -103,7 +102,7 @@ canvas.addEventListener('mousemove', (e) => {
   if (dragging) {
     dragEnd = { x: mouseX, y: mouseY };
 
-    // convert to cell coords
+    //convert to cell coords
     const minX = Math.floor(Math.min(dragStart.x, dragEnd.x) / cellSize);
     const minY = Math.floor(Math.min(dragStart.y, dragEnd.y) / cellSize);
     const maxX = Math.floor(Math.max(dragStart.x, dragEnd.x) / cellSize);
@@ -143,7 +142,7 @@ canvas.addEventListener('mouseleave', () => {
   drawCurve();
 });
 
-// mouse down
+//mouse down
 canvas.addEventListener('mousedown', (e) => {
   const rect = canvas.getBoundingClientRect();
   dragStart = {
@@ -154,7 +153,7 @@ canvas.addEventListener('mousedown', (e) => {
   dragging = true;
 });
 
-// mouse up
+//mouse up
 canvas.addEventListener('mouseup', (e) => {
   dragging = false;
   dragStart = null;
@@ -162,25 +161,30 @@ canvas.addEventListener('mouseup', (e) => {
   drawCurve();
 });
 
+//listener for cell size
 document.getElementById('cellSize').addEventListener('input', (e) => {
+  if(parseInt(e.target.value) < 9){
   gridSize = Math.pow(2, parseInt(e.target.value));
   cellSize = size / gridSize;
   points = generatePoints();
   selectedPoints = [];
-  drawCurve();
+  drawCurve();}
 });
 
 function drawQuadtreeGrid(depth = 4, x = 0, y = 0, w = size, h = size, level = 0) {
-  if (level >= depth) return;
+
+  if (level >= depth){
+    return;
+  } 
 
   const halfW = w / 2;
   const halfH = h / 2;
 
-  // Draw subdivision lines
+  //draw subdivision lines
   ctx.strokeStyle = `rgba(0, 255, 0, ${1 - level / (depth*0.9)})`;
   ctx.lineWidth = 0.5;
   
-  // Vertical and horizontal midlines
+  //vertical and horizontal midlines
   ctx.beginPath();
   ctx.moveTo(x + halfW, y);
   ctx.lineTo(x + halfW, y + h);
@@ -191,13 +195,14 @@ function drawQuadtreeGrid(depth = 4, x = 0, y = 0, w = size, h = size, level = 0
   ctx.lineTo(x + w, y + halfH);
   ctx.stroke();
 
-  // Recursively draw for 4 quadrants
-  drawQuadtreeGrid(depth, x, y, halfW, halfH, level + 1);               // top-left
-  drawQuadtreeGrid(depth, x + halfW, y, halfW, halfH, level + 1);       // top-right
-  drawQuadtreeGrid(depth, x, y + halfH, halfW, halfH, level + 1);       // bottom-left
-  drawQuadtreeGrid(depth, x + halfW, y + halfH, halfW, halfH, level + 1); // bottom-right
+  //recursively draw for 4 quadrants
+  drawQuadtreeGrid(depth, x, y, halfW, halfH, level + 1);                 //topleft
+  drawQuadtreeGrid(depth, x + halfW, y, halfW, halfH, level + 1);         //topright
+  drawQuadtreeGrid(depth, x, y + halfH, halfW, halfH, level + 1);         //bottomleft
+  drawQuadtreeGrid(depth, x + halfW, y + halfH, halfW, halfH, level + 1); //bottomright
 }
 
+//conmstructin the tree
 function buildMortonTree(maxDepth = 4) {
   function recurse(prefix, depth) {
     const node = {
@@ -218,23 +223,19 @@ function buildMortonTree(maxDepth = 4) {
   return recurse('', 0);
 }
 
+//function to draw tree visualisation
 function renderMortonTree(containerId, depth = 4) {
+
   const data = buildMortonTree(depth);
   const width = 750;
   const height = 750;
 
   const root = d3.hierarchy(data);
 
-  // Create a tree layout with fixed size
-  const treeLayout = d3.tree().size([width, height - 100]); // Slight vertical padding
-
-  // Apply the layout
+  //create a tree layout with fixed size
+  const treeLayout = d3.tree().size([width, height - 100]);
   treeLayout(root);
-
-  // Clear previous content
   d3.select(`#${containerId}`).selectAll("*").remove();
-
-  // Create SVG
   const svg = d3.select(`#${containerId}`)
     .append("svg")
     .attr("width", width)
@@ -243,7 +244,7 @@ function renderMortonTree(containerId, depth = 4) {
 
   const g = svg.append("g");
 
-  // Draw links (edges)
+  //edges
   g.selectAll("line")
     .data(root.links())
     .enter()
@@ -255,7 +256,7 @@ function renderMortonTree(containerId, depth = 4) {
     .attr("stroke", "#aaa")
     .attr("stroke-width", 1.5);
 
-  // Draw nodes
+  //nodes
   g.selectAll("circle")
     .data(root.descendants())
     .enter()
@@ -265,7 +266,7 @@ function renderMortonTree(containerId, depth = 4) {
     .attr("r", 5)
     .attr("fill", d => d.children ? "#0ff" : "#ff0");
 
-  // Optional: Add labels
+  //labels
   g.selectAll("text")
     .data(root.descendants())
     .enter()

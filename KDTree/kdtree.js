@@ -17,31 +17,21 @@ treecontainer.appendChild(treeCanvas);
 const treeCtx = treeCanvas.getContext('2d');
 const treebounds = { xMin: 0, xMax: treeCanvas.width, yMin: 0, yMax: treeCanvas.height };
 
-let queryMode = false;
+let Mode = false;
 let queryPoint = null;
-let queryResults = [];
+let Results = [];
 
-let insertedPoints = [];
-
-document.getElementById('query-btn').addEventListener('click', () => {
-    queryMode = true;
-    queryPoint = null;
-    queryResults = [];
-});
+let dragging = false;
+let dragStart = null;
+let dragEnd = null;
+let selectionBox = null;
+let visitedNodes = [];
 
 //creating 10 random points to fill the tree with, will let user choose how many later
 points = Array(10).fill().map(() => ({
     x: Math.random() * canvas.width,
     y: Math.random() * canvas.height
 }));
-
-//function to add a point
-function addPoints(points){
-    const x = Math.random() * canvas.width;
-    const y = Math.random() * canvas.height;
-    points.push({ x, y });
-    insertedPoints.push({ x, y });
-}
 
 //making the kdtee at the start
 function kdTreeConstruction(points, depth = 0) {
@@ -92,24 +82,24 @@ function drawGridAndAxes() {
         ctx.stroke();
     }
 
-    // Draw X axis (horizontal line in middle)
-    ctx.strokeStyle = `rgba(255, 0, 0, ${opacity})`;  // Red for X axis
+    //draw X axis
+    ctx.strokeStyle = `rgba(255, 0, 0, ${opacity})`;
     ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]); // keep dotted for axis too
+    ctx.setLineDash([5, 5]);
     ctx.beginPath();
     ctx.moveTo(0, canvas.height / 2);
     ctx.lineTo(canvas.width, canvas.height / 2);
     ctx.stroke();
 
-    // Draw Y axis (vertical line in middle)
-    ctx.strokeStyle = `rgba(0, 128, 0, ${opacity})`;  // Green for Y axis
+    // Draw Y axis
+    ctx.strokeStyle = `rgba(0, 128, 0, ${opacity})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(canvas.width / 2, 0);
     ctx.lineTo(canvas.width / 2, canvas.height);
     ctx.stroke();
 
-    ctx.setLineDash([]); // reset line dash after done
+    ctx.setLineDash([]);
 }
 
 //initialising the tree
@@ -136,9 +126,11 @@ function drawKDTree(node, depth = 0, bounds = { xMin: 0, xMax: canvas.width, yMi
     ctx.setLineDash([]); // reset dash
 
     // Draw point
-    // Hue: 0 = red, 240 = blue
-    const hue = (1 - depth / (insertedPoints.length - 1)) * 270;
-    const color = `hsl(${hue}, 100%, 50%)`;
+    if(depth % 2 == 0){
+        color = 'green';
+    } else {
+        color = 'red'
+    }
 
     ctx.fillStyle = color;
     ctx.beginPath();
@@ -175,6 +167,7 @@ function drawKDTree(node, depth = 0, bounds = { xMin: 0, xMax: canvas.width, yMi
     }
 }
 
+//function to insert a node
 function insertKDNode(node, point, depth = 0) {
     if (!node) {
         return {
@@ -193,6 +186,7 @@ function insertKDNode(node, point, depth = 0) {
     return node;
 }
 
+//function for kNN search
 function findKNearest(node, target, k, depth = 0, heap = []) {
     if (!node) return [];
 
@@ -201,7 +195,7 @@ function findKNearest(node, target, k, depth = 0, heap = []) {
 
     if (heap.length < k) {
         heap.push({ point: node.point, dist });
-        heap.sort((a, b) => b.dist - a.dist); // max heap by distance
+        heap.sort((a, b) => b.dist - a.dist);
     } else if (dist < heap[0].dist) {
         heap[0] = { point: node.point, dist };
         heap.sort((a, b) => b.dist - a.dist);
@@ -220,100 +214,309 @@ function findKNearest(node, target, k, depth = 0, heap = []) {
     return heap.map(h => h.point);
 }
 
+//simple distance calculating function
 function distance(p1, p2) {
     return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
 }
 
+//drawing function
 function draw() {
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawGridAndAxes();
     drawKDTree(kdTree);
-    if (queryPoint) {
-    // draw query point
-    ctx.fillStyle = 'red';
-    ctx.beginPath();
-    ctx.arc(queryPoint.x, queryPoint.y, 6, 0, 2 * Math.PI);
-    ctx.fill();
 
-    // draw dotted lines to result points
-    ctx.strokeStyle = 'rgba(255,0,0,0.6)';
-    ctx.setLineDash([5, 5]);
-    queryResults.forEach(p => {
-        ctx.beginPath();
-        ctx.moveTo(queryPoint.x, queryPoint.y);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
-    });
-    ctx.setLineDash([]);
-
-    // highlight result points
-    ctx.fillStyle = 'blue';
-    queryResults.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
-        ctx.fill();
-    });
+    //Draw the selection rectangle if dragging
+    if (dragStart && dragEnd) {
+        const x = Math.min(dragStart.x, dragEnd.x);
+        const y = Math.min(dragStart.y, dragEnd.y);
+        const w = Math.abs(dragStart.x - dragEnd.x);
+        const h = Math.abs(dragStart.y - dragEnd.y);
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(x, y, w, h);
+        ctx.setLineDash([]);
     }
+
+    //Draw query point and lines (for k-NN)
+    if (queryPoint) {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(queryPoint.x, queryPoint.y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255,0,0,0.6)';
+        ctx.setLineDash([5, 5]);
+        Results.forEach(p => {
+            ctx.beginPath();
+            ctx.moveTo(queryPoint.x, queryPoint.y);
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+        });
+        ctx.setLineDash([]);
+    }
+
+    //Draw result points (for range or k-NN)
+    if (Results && Results.length > 0) {
+        ctx.fillStyle = 'blue';
+        Results.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+    }
+
+    // Draw persistent selection box (if any)
+    if (selectionBox) {
+    const x = selectionBox.minX;
+    const y = selectionBox.minY;
+    const w = selectionBox.maxX - selectionBox.minX;
+    const h = selectionBox.maxY - selectionBox.minY;
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(x, y, w, h);
+    ctx.setLineDash([]);
+    }
+
     treeCtx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
-    drawKDTreeStructure(treeCtx, kdTree, treeCanvas.width / 2, 40, 150, 60);
+    drawKDTreeStructure(treeCtx, kdTree, treeCanvas.width / 2, 40, 150, 60, 0, Results);
+}
+
+// Find node with minimum coordinate on given axis in subtree rooted at node
+function findMin(node, axis, depth = 0) {
+    if (!node) return null;
+    
+    const currentAxis = node.axis;
+    
+    if (currentAxis === axis) {
+        if (!node.left) {
+            return node;
+        }
+        return findMin(node.left, axis, depth + 1);
+    } else {
+        const leftMin = findMin(node.left, axis, depth + 1);
+        const rightMin = findMin(node.right, axis, depth + 1);
+
+        let minNode = node;
+        if (leftMin && leftMin.point[axis] < minNode.point[axis]) minNode = leftMin;
+        if (rightMin && rightMin.point[axis] < minNode.point[axis]) minNode = rightMin;
+
+        return minNode;
+    }
+}
+
+function* animatedRangeQueryKDTree(node, rect, depth = 0) {
+  if (!node) return;
+
+  const axis = depth % 2 === 0 ? 'x' : 'y';
+  const { minX, maxX, minY, maxY } = rect;
+  const { x, y } = node.point;
+
+  // Yield current node to animate visit
+  yield { type: "visit", node, depth };
+
+  // Check if inside range
+  if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+    yield { type: "found", node, depth };
+  }
+
+  // Decide whether to visit left/right based on axis
+  if ((axis === 'x' && minX <= x) || (axis === 'y' && minY <= y)) {
+    yield* animatedRangeQueryKDTree(node.left, rect, depth + 1);
+  }
+
+  if ((axis === 'x' && maxX >= x) || (axis === 'y' && maxY >= y)) {
+    yield* animatedRangeQueryKDTree(node.right, rect, depth + 1);
+  }
+}
+
+async function runAnimatedRangeQuery(rect) {
+  const gen = animatedRangeQueryKDTree(kdTree, rect);
+  let step = gen.next();
+
+  Results = [];
+  visitedNodes = [];
+
+  while (!step.done) {
+    const { type, node } = step.value;
+
+    if (type === "visit") {
+      visitedNodes.push(node.point);
+    }
+
+    if (type === "found") {
+      Results.push(node.point);
+    }
+
+    draw();
+    await new Promise(r => setTimeout(r, 850));
+    step = gen.next();
+  }
+
+  draw();
 }
 
 //listener for reset button
 document.getElementById('reset').addEventListener('click', () => {
     points = [];
     kdTree = null;
+
+    // Clear query state
+    queryPoint = null;
+    Results = [];
+
     draw();
 });
 
 //listener for random points button, rebuilds tree with new random points
 document.getElementById('random-points').addEventListener('click', () => {
-    points = Array(10).fill().map(() => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height
-    }));
+
+    points = [];
+    let i = 0, point;
+
+    // Clear query state
+    queryPoint = null;
+    Results = [];
+
+    for(i = 0; i < 10; i++){
+        point = {x: Math.random() * canvas.width,
+                     y: Math.random() * canvas.height};
+        points.unshift(point);
+        kdTree = insertKDNode(kdTree, point);
+    }
     kdTree = kdTreeConstruction(points);
     draw();
 });
 
+//listener to batch add points
 document.getElementById('add-multiple').addEventListener('click', () => {
-    for(let i = 0; i < 20; i++)
-        points.unshift({x: Math.random() * canvas.width, y: Math.random() * canvas.height});
-    kdTree = kdTreeConstruction(points);
+    for(let i = 0; i < 5; i++){
+        let point = {x: Math.random() * canvas.width,
+                     y: Math.random() * canvas.height};
+        points.unshift(point);
+        kdTree = insertKDNode(kdTree, point);}
+
+    // Clear query state
+    queryPoint = null;
+    Results = [];
+
     draw();
 });
 
-canvas.addEventListener('click', (event) => {
+document.getElementById('query-btn').addEventListener('click', () => {
+    Mode = true;
+});
+
+//listener for knn query and adding points
+canvas.addEventListener('click', (event) => { 
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    if (queryMode) {
-        queryPoint = { x, y };
-        queryResults = findKNearest(kdTree, queryPoint, 5); 
-        queryMode = false;
-    } else {
-    points.unshift({ x, y }); // if you want to keep the array updated
-    kdTree = insertKDNode(kdTree, { x, y });
-
-    insertedPoints.push({x,y});
-
+    if (selectionBox) {
+        selectionBox = null;
+        Results = [];
+        queryPoint = null;
+        draw();
+        return; // don't add point
     }
 
-    draw(); // redraw everything
+    if (Mode) {
+        queryPoint = { x, y };
+        Results = findKNearest(kdTree, queryPoint, 5); 
+        Mode = false;
+    } else {
+
+        if (!Mode && selectionBox) {
+        // prevent adding points when a selection box exists
+        return;
+        }
+
+        points.unshift({ x, y });
+        kdTree = insertKDNode(kdTree, { x, y });
+
+        // Clear query state
+        queryPoint = null;
+        Results = [];
+    }
+
+    draw();
+});
+
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  dragStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  dragging = true;
+});
+
+canvas.addEventListener('mouseup', () => {
+  if (dragStart && dragEnd) {
+    const minX = Math.min(dragStart.x, dragEnd.x);
+    const maxX = Math.max(dragStart.x, dragEnd.x);
+    const minY = Math.min(dragStart.y, dragEnd.y);
+    const maxY = Math.max(dragStart.y, dragEnd.y);
+    selectionBox = { minX, maxX, minY, maxY };
+  }
+
+  dragging = false;
+  dragStart = null;
+  dragEnd = null;
+
+  draw(); // redraw with persistent box
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  if (dragging) {
+    dragEnd = { x: mouseX, y: mouseY };
+
+    const minX = Math.min(dragStart.x, dragEnd.x);
+    const maxX = Math.max(dragStart.x, dragEnd.x);
+    const minY = Math.min(dragStart.y, dragEnd.y);
+    const maxY = Math.max(dragStart.y, dragEnd.y);
+
+    const rangeRect = { minX, minY, maxX, maxY };
+
+    runAnimatedRangeQuery(rangeRect);
+  }
 });
 
 draw();
 
-//#################################################################
-//STRUCTURE PART
+canvas.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+});
 
-function drawKDTreeStructure(ctx, node, x, y, dx, dy, depth = 0) {
+
+//STRUCTURE PART
+function drawKDTreeStructure(ctx, node, x, y, dx, dy, depth = 0, highlightPoints = []) {
     if (!node) return;
+
+    const isVisited = visitedNodes.some(p =>
+  Math.abs(p.x - node.point.x) < 1e-6 &&
+  Math.abs(p.y - node.point.y) < 1e-6
+);
+
+const isFound = highlightPoints.some(p =>
+  Math.abs(p.x - node.point.x) < 1e-6 &&
+  Math.abs(p.y - node.point.y) < 1e-6
+);
+
+let color = isFound
+  ? "blue"
+  : isVisited
+  ? "orange"
+  : (depth % 2 === 0 ? "green" : "red");
 
     // Draw current node
     ctx.beginPath();
     ctx.arc(x, y, 12, 0, Math.PI * 2);
-    ctx.fillStyle = depth % 2 === 0 ? "green" : "red";
+    ctx.fillStyle = color;
     ctx.fill();
     ctx.stroke();
 
@@ -322,18 +525,13 @@ function drawKDTreeStructure(ctx, node, x, y, dx, dy, depth = 0) {
     ctx.textAlign = "center";
     ctx.fillText(depth % 2 === 0 ? "Y" : "X", x, y + 6);
 
-    //ctx.fillStyle = 'black';
-    //ctx.font = "15px sans-serif";
-    //ctx.textAlign = "center";
-    //ctx.fillText(`[${(x).toFixed(0)}, ${(y).toFixed(0)}]`, x + 50, y);
-
-    // Draw lines and recurse
+    // Draw children
     if (node.left) {
         ctx.beginPath();
         ctx.moveTo(x, y + 11);
         ctx.lineTo(x - dx, y + dy);
         ctx.stroke();
-        drawKDTreeStructure(ctx, node.left, x - dx, y + dy, dx / 2, dy, depth + 1);
+        drawKDTreeStructure(ctx, node.left, x - dx, y + dy, dx / 2, dy, depth + 1, highlightPoints);
     }
 
     if (node.right) {
@@ -341,6 +539,6 @@ function drawKDTreeStructure(ctx, node, x, y, dx, dy, depth = 0) {
         ctx.moveTo(x, y + 11);
         ctx.lineTo(x + dx, y + dy);
         ctx.stroke();
-        drawKDTreeStructure(ctx, node.right, x + dx, y + dy, dx / 2, dy, depth + 1);
+        drawKDTreeStructure(ctx, node.right, x + dx, y + dy, dx / 2, dy, depth + 1, highlightPoints);
     }
 }

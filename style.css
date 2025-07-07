@@ -276,8 +276,8 @@ a:active{
 }
 
 .button-list button {
-    display: block; /* Changed to block for better spacing */
-    margin: 10px auto; /* Centered */
+    display: block;
+    margin: 10px auto;
     border: 2px solid rgb(255, 244, 232);
     border-radius: 7px;
     padding: 10px 15px;
@@ -288,11 +288,10 @@ a:active{
     font-family: 'Courier New', Courier, monospace;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.5s ease; /* Combined transitions */
-    min-width: 175px; /* Ensures consistent sizing */
+    transition: all 0.5s ease;
+    min-width: 175px;
 }
 
-/* Hover state */
 .button-list button:hover {
     border: 5px solid rgb(255, 0, 60);
     border-radius: 9px;
@@ -300,13 +299,11 @@ a:active{
     transform: translateY(-2px);
 }
 
-/* Active state */
 .button-list button:active {
     transform: translateY(1px);
     background-color: rgba(255, 0, 60, 0.1);
 }
 
-/* Focus state (for accessibility) */
 .button-list button:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(255, 0, 60, 0.4);
@@ -410,7 +407,7 @@ a:active{
 }
 
 #cellSize{
-    width: 100%;
+    width: 10%;
     color: crimson;
 }
 
